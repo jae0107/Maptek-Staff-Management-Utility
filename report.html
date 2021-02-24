@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <base target="_top">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.3/jspdf.debug.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    .tooltip span {
+      display: none;
+    }
+
+    .tooltip:hover span {
+      display: block;
+      position: fixed;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script src="https://code.jquery.com/jquery-latest.js"></script>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    ul.topnav {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #333;
+    }
+
+    ul.topnav li {
+      float: left;
+    }
+
+    ul.topnav li a {
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+
+    ul.topnav li a.active {
+      background-color: #4CAF50;
+    }
+
+    ul.topnav li.right {
+      float: right;
+    }
+
+    @media screen and (max-width: 600px) {
+
+      ul.topnav li.right,
+      ul.topnav li {
+        float: none;
+      }
+    }
+
+    .menu-bar {
+      display: flex;
+      flex-direction: row;
+      margin-top: 30px;
+    }
+
+    #print-button {
+      position: absolute;
+      right: 30px;
+    }
+
+    .report-body {
+      display: flex;
+      flex-direction: column;
+      width: 90%;
+      position: relative;
+      top: 30px;
+      left: 50px;
+    }
+
+    #report-by-team {
+      /* visibility: hidden; */
+    }
+
+    #report-by-building {
+      /* visibility: hidden; */
+    }
+
+    .title-bar {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      height: 50px;
+    }
+
+    h2 {
+      font-size: 1.3em;
+    }
+
+    #report-content1 {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .pie-chart {
+      width: 100%;
+      height: 400px;
+    }
+
+    .row {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+    }
+  </style>
+
+  <script type="text/javascript">
+    var staff_info = [];
+    var teams_list = [];
+    google.script.run.withSuccessHandler(get_account).account();
+    google.script.run.withSuccessHandler(navigation_bar).getScriptUrl();
+    google.charts.load('current', { packages: ["orgchart"] });
+    google.charts.load('current', { 'packages': ['corechart'] });
+    google.script.run.withSuccessHandler(loadData).callData();
+    
+    var account = "";
+    function get_account(id){
+      account = id;
+    }
+    
+    var nav_bar = "";
+    function navigation_bar(nav){
+      console.log(nav);
+      nav_bar = nav;
+    }
+
+    function loadData(dataReturned) {
+      for (var i = 0; i < dataReturned.length; i++) {
+        var tmp = dataReturned[i][1];
+        dataReturned[i][1] = dataReturned[i][2];
+        dataReturned[i][2] = tmp;
+        dataReturned[i][20] = dataReturned[i][0];
+      } //dataReturned[i][0]: name, dataReturned[i][1]: position in acronym, dataReturned[i][2]: position
+
+      for (var i = 0; i < dataReturned.length; i++) {
+        if (dataReturned[i][20] != "") {
+          staff_info.push(dataReturned[i]);
+        }
+      }
+
+      var tmpArr = dataReturned;
+      for (var i = 0; i < dataReturned.length; i++) {
+        tmpArr[i][0] = tmpArr[i][2];
+      }
+
+      for (var i = 0; i < tmpArr.length; i++) {
+        for (var j = 0; j < tmpArr[i][0].length; j++) {
+          if (tmpArr[i][0].charAt(j) == '(') {
+            tmpArr[i][0] = tmpArr[i][0].substr(j + 1);
+            j = 0;
+          } else if (tmpArr[i][0].charAt(j) == ')') {
+            tmpArr[i][0] = tmpArr[i][0].substr(0, j);
+          }
+        }
+      }
+      // Create dropdown menu
+      find_boss();
+      find_building();
+      
+      var validation = false;
+      var idx = 0;
+      for (var i = 0; i < dataReturned.length; i++) {
+        if(dataReturned[i][7] == account){
+          validation = true;
+          idx = i;
+        }
+      }
+            
+      if(dataReturned[idx][8] == "editor" || dataReturned[idx][8] == "Editor"){
+        document.getElementById("home").innerHTML = "<li><a href='" + nav_bar + "'>Home</a></li>";
+        document.getElementById("chart").innerHTML = "<li><a href='" + nav_bar + "?v=chart'>Chart</a></li>";
+        document.getElementById("list").innerHTML = "<li><a href='" + nav_bar + "?v=list'>List</a></li>";
+        document.getElementById("report").innerHTML = "<li><a class='active' href='" + nav_bar + "?v=report'>Report</a></li>";
+        document.getElementById("profile").innerHTML = "<li><a href='" + nav_bar + "?v=profile'>Profile</a></li>";
+        document.getElementById("add").innerHTML = "<li><a href='" + nav_bar + "?v=add'>Add</a></li>";
+        document.getElementById("edit").innerHTML = "<li><a href='" + nav_bar + "?v=edit'>Edit</a></li>";
+      } else {
+        document.getElementById("home").innerHTML = "<li><a href='" + nav_bar + "'>Home</a></li>";
+        document.getElementById("chart").innerHTML = "<li><a href='" + nav_bar + "?v=chart_viewer'>Chart</a></li>";
+        document.getElementById("list").innerHTML = "<li><a href='" + nav_bar + "?v=list_viewer'>List</a></li>";
+        document.getElementById("report").innerHTML = "<li><a class='active' href='" + nav_bar + "?v=report'>Report</a></li>";
+        document.getElementById("profile").innerHTML = "<li><a href='" + nav_bar + "?v=profile'>Profile</a></li>";
+      }
+            
+      if(validation == false){
+        lock();
+      }
+    }
+    
+    function lock(){
+      var obj = document.getElementById("bak");
+	  obj.style.width = document.body.scrollWidth + 'px';
+	  obj.style.height = document.body.scrollHeight + 'px';
+
+	  obj.style.filter = "alpha(opacity=80)";
+	  obj.style.opacity = "0.8";
+	  obj.style.visibility = "visible";
+    }
+    
+    function find_boss() {
+      //find and add bosses
+      for (var i = 0; i < staff_info.length; i++) {
+        if (!teams_list.includes(staff_info[i])){
+          teams_list.push(staff_info[i]);
+        }
+      }
+      //delete duplicate
+      if (teams_list.length != 0) {
+        for (var i = 0; i < teams_list.length; i++) {
+          for (var j = 0; j < teams_list.length; j++) {
+            if (i != j && teams_list[i][9] == teams_list[j][9]) {
+              teams_list.splice(j, 1);
+              i = 0;
+              j = 0;
+            }
+          }
+        }
+      }
+
+      //create dropdown menu
+      var tmp = "<select onchange='department_element(this.value)'><option value='Department/Office'>Department/Office<option value='Entire company'>Entire company";
+      for (var i = 0; i < teams_list.length; i++) {
+        tmp = tmp + "<option value='" + teams_list[i][20] + "'>" + teams_list[i][9];
+      }
+      tmp = tmp + "</select>";
+      document.getElementById("boss").innerHTML = tmp;
+    }
+
+    var page_title = "";
+    var department = [];
+
+    function department_element(boss_name) {
+      if (department.length > 0) {
+        department.splice(0, department.length)
+      }
+      var element_num = -1;
+      var HoD = [];
+      for (var i = 0; i < staff_info.length; i++) {
+        if (boss_name == staff_info[i][20]) {
+          element_num = i;
+          department.push(staff_info[i]);
+
+        }
+        if (element_num != -1 && element_num != i && staff_info[element_num][0] == staff_info[i][1]) {
+          department.push(staff_info[i]);
+        }
+      }
+  
+      if (boss_name == "Entire company") {
+        page_title = "Company ";
+        generateReport_byTeam(staff_info);
+      } else if (boss_name == "Department/Office") {
+        document.getElementById("title").innerHTML = "";
+        document.getElementById("report-content1").innerHTML = "";
+        document.getElementById('report-content4').innerHTML = "";
+        // documents.getElementById('report-by-team').style.visibility = "hidden";
+
+      } else {
+        for (var i = 0; i < teams_list.length; i++) {
+          if (teams_list[i][20] == boss_name) {
+            page_title = teams_list[i][9];
+          }
+        }
+        generateReport_byTeam(department);
+        // documents.getElementById('report-by-team').style.visibility = "visibile";
+      }
+      //console.log(boss_name + ": " + page_title);
+    }
+
+
+    var building_list = [];
+
+    function find_building() {
+      for (var i = 0; i < staff_info.length; i++) {
+        if (!building_list.includes(staff_info[i][4])){
+          building_list.push(staff_info[i][4]);
+        }
+        
+      }
+      //delete duplicate
+      // if (building_list.length != 0) {
+      //   for (var i = 0; i < building_list.length; i++) {
+      //     for (var j = 0; j < building_list.length; j++) {
+      //       if (i != j && building_list[i] == building_list[j]) {
+      //         building_list.splice(j, 1);
+      //         i = 0;
+      //         j = 0;
+      //       }
+      //     }
+      //   }
+      // }
+
+      //create dropdown menu
+      var tmp = "<select onchange='building_element(this.value)'><option value='Building'>Building";
+      for (var i = 0; i < building_list.length; i++) {
+        tmp = tmp + "<option value='" + building_list[i] + "'>" + building_list[i];
+      }
+      tmp = tmp + "</select>";
+      document.getElementById("building").innerHTML = tmp;
+    }
+
+
+    function building_element(location) {
+      var tmp = [];
+      for (var i = 0; i < staff_info.length; i++) {
+        if (staff_info[i][4] == location) {
+          tmp.push(staff_info[i]);
+        }
+      }
+      if (location == "Building") {
+        document.getElementById("title_building").innerHTML = "";
+        document.getElementById("number_of_team").innerHTML = "";
+        document.getElementById('gender_ratio_by_building').innerHTML = "";
+      } else {
+        generateReport_byBuilding(tmp, location);
+      }
+      // if (location != "Building"){
+      //   generateReport_byBuilding(tmp.location);
+        
+      // }
+    }
+
+    var piechart_url;
+
+    function generateReport_byTeam(staff) {
+      var all_locations = getLocations(staff);
+      document.getElementById("title").innerHTML = "<h1>" + page_title + " Overview</h1>";
+
+      // report content 1: The number of staff per building
+      var tmp = "<p style='font-size: 1.3em;'><b>The number of staff in each location is:</b></p>";
+      //$('#report-content1').append("<p style='font-size: 1.3em;'><b>The number of staff in each location is:</b></p>");
+
+      for (let i = 0; i < all_locations.length; i++) {
+        var staff_names = "";
+        for (let j = 0; j < staff.length; j++) {
+          if (all_locations[i] == staff[j][4]) {
+            staff_names = staff_names + "<div>" + staff[j][20] + ":&#9<div style='float: right; width: 80%; color:red; font-style:italic; font-size:13px;'>" + staff[j][2] + "<div style='float: right; width: 60%; color:green; font-style:italic; font-size:13px;'>" + staff[j][6] + "<div style='float: right; width: 60%; color:green; font-style:italic; font-size:13px;'>" + staff[j][7] + "<div style='float: right; color:red; font-style:italic; font-size:13px;'>(entered in " + staff[j][10] + ")</div></div></div></div></div>";
+          }
+        }
+        tmp = tmp + "<div class='row'><div style='display: flex; flex-direction: row;'><i class='material-icons' style='position: relative; top: 12px; margin-right: 10px'>domain</i><p> " + all_locations[i] + "</p></div><p>" + countLocation(staff, all_locations[i]) + "</p></div>" + staff_names;
+      }
+
+      tmp = tmp + "<div class='row'><div style='display: flex; flex-direction: row;'><i class='material-icons' style='position: relative; top: 12px; margin-right: 10px'>domain</i><p>Total</p></div><p>" + staff.length + "</p></div>";
+      document.getElementById("report-content1").innerHTML = tmp;
+
+      // Male and female ratio
+      var male = countGender(staff, "Male") + countGender(staff, "male");
+      var female = countGender(staff, "Female") + countGender(staff, "female");
+      var piechart_data = google.visualization.arrayToDataTable([
+        ['Gender', 'Gender'],
+        ['Male', male],
+        ['Female', female]
+      ]);
+      var options = {
+        'title': 'Male and Female Ratio of ' + page_title,
+        titleTextStyle: {
+          fontSize: 18
+        }
+      };
+      var chart = new google.visualization.PieChart(document.getElementById('report-content4'));
+      google.visualization.events.addListener(chart, 'ready', function () {
+        document.getElementById('report-content4').innerHTML = '<h2>Male and Female Ratio</h2><img src="' + chart.getImageURI() + '">';
+      });
+      chart.draw(piechart_data);
+    }
+
+    function getLocations(staff) {
+      var locations = [];
+      for (let i = 0; i < staff.length; i++) {
+        if (!locations.includes(staff[i][4]) && staff[i][4] != "") {
+          locations.push(staff[i][4]);
+        }
+      }
+      return locations;
+    }
+
+    function countLocation(staff, location) {
+      var count = 0;
+      for (var i = 0; i < staff.length; i++) {
+        if (staff[i][4] == location) {
+          //count = count + parseInt(staff[i][3]);
+          count = count + 1;
+        }
+      }
+      return count;
+    }
+
+    function countGender(staff, gender) {
+      var count = 0;
+      for (var i = 0; i < staff.length; i++) {
+        if (staff[i][5] == gender) {
+          count++;
+        }
+      }
+      return count;
+    }
+
+    function printReport() {
+      $('.topnav').hide();
+      $('.menu-bar').hide();
+      // var doc = new jsPDF("portrait", "pt", "a4");
+      var doc = new jsPDF();
+      // doc.fromHTML(
+      //   $('body'),
+      //   function () {
+      //     doc.save('Company Overview.pdf');
+      //   },
+      // );
+      doc.addHTML(
+        $('body')[0], 
+        15, 
+        15, 
+        { 'background': '#fff',}, 
+        function () {
+          doc.save('Company Overview.pdf');
+        }
+      );
+      $('.topnav').show();
+      $('.menu-bar').show();
+    }
+
+    function generateReport_byBuilding(staff, location) {
+      document.getElementById("title_building").innerHTML = "<h1>" + location + " Overview</h1>";
+      var tmp = "<p style='font-size: 1.3em;'><b>The number of staff in each department/office is:</b></p>";
+      console.log(staff);
+      //find and add bosses
+      var team_by_building = [];
+      for (var i = 0; i < staff.length; i++) {
+        team_by_building.push(staff[i]);
+      }
+
+      //delete duplicate
+      if (team_by_building.length != 0) {
+        for (var i = 0; i < team_by_building.length; i++) {
+          for (var j = 0; j < team_by_building.length; j++) {
+            if (i != j && team_by_building[i][9] == team_by_building[j][9]) {
+              team_by_building.splice(j, 1);
+              i = 0;
+              j = 0;
+            }
+          }
+        }
+      }
+
+      for (var i = 0; i < team_by_building.length; i++) {
+        var staff_names = "";
+        for (let j = 0; j < staff.length; j++) {
+          if (team_by_building[i][9] == staff[j][9]) {
+            staff_names = staff_names + "<div>" + staff[j][20] + ":&#9<div style='float: right; width: 80%; color:red; font-style:italic; font-size:13px;'>" + staff[j][2] + "<div style='float: right; width: 60%; color:green; font-style:italic; font-size:13px;'>" + staff[j][6] + "<div style='float: right; width: 60%; color:green; font-style:italic; font-size:13px;'>" + staff[j][7] + "<div style='float: right; color:red; font-style:italic; font-size:13px;'>(entered in " + staff[j][10] + ")</div></div></div></div></div>";
+          }
+        }
+        tmp = tmp + "<div class='row'><div style='display: flex; flex-direction: row;'><i class='material-icons' style='position: relative; top: 12px; margin-right: 10px'>domain</i><p> " + team_by_building[i][9] + "</p></div><p>" + count_staff_in_team(staff, team_by_building[i][9]) + "</p></div>" + staff_names;
+      }
+
+      tmp = tmp + "<div class='row'><div style='display: flex; flex-direction: row;'><i class='material-icons' style='position: relative; top: 12px; margin-right: 10px'>domain</i><p>Total</p></div><p>" + staff.length + "</p></div>";
+      document.getElementById("number_of_team").innerHTML = tmp;
+
+      // Male and female ratio
+      var male = countGender(staff, "Male") + countGender(staff, "male");
+      var female = countGender(staff, "Female") + countGender(staff, "female");
+      var piechart_data = google.visualization.arrayToDataTable([
+        ['Gender', 'Gender'],
+        ['Male', male],
+        ['Female', female]
+      ]);
+      var options = {
+        'title': 'Male and Female Ratio in ' + location,
+        titleTextStyle: {
+          fontSize: 18
+        }
+      };
+      // var chart = new google.visualization.PieChart(document.getElementById('gender_ratio_by_building'));
+      // chart.draw(piechart_data, options);
+      // piechart_url = chart.getImageURI();
+      var chart = new google.visualization.PieChart(document.getElementById('gender_ratio_by_building'));
+      google.visualization.events.addListener(chart, 'ready', function () {
+        document.getElementById('gender_ratio_by_building').innerHTML = '<h2>Male and Female Ratio</h2><img src="' + chart.getImageURI() + '">';
+      });
+      chart.draw(piechart_data);
+    }
+
+    function count_staff_in_team(staff, team) {
+      var count = 0;
+      for (var i = 0; i < staff.length; i++) {
+        if (team == staff[i][9]) {
+          count++;
+        }
+      }
+      return count;
+    } 
+  </script>
+  <ul class="topnav">
+    <div id="home"></div>
+    <div id="chart"></div>
+    <div id="list"></div>
+    <div id="report"></div>
+    <div id="add"></div>
+    <div id="edit"></div>
+    <div id="profile" style="position: absolute; right: 0px;"></div>
+    <!--<li><a
+        href='https://script.google.com/a/macros/student.adelaide.edu.au/s/AKfycbxNldu1CvNhotkst_q05xsDzDkZpIcCPP_0E2_6lln2_HUPpbxa/exec'>Home</a>
+    </li>
+    <li><a
+        href='https://script.google.com/a/macros/student.adelaide.edu.au/s/AKfycbxNldu1CvNhotkst_q05xsDzDkZpIcCPP_0E2_6lln2_HUPpbxa/exec?v=chart'>Chart</a>
+    </li>
+    <li><a
+        href='https://script.google.com/a/macros/student.adelaide.edu.au/s/AKfycbxNldu1CvNhotkst_q05xsDzDkZpIcCPP_0E2_6lln2_HUPpbxa/exec?v=list'>List</a>
+    </li>
+    <li><a
+        href='https://script.google.com/a/macros/student.adelaide.edu.au/s/AKfycbxNldu1CvNhotkst_q05xsDzDkZpIcCPP_0E2_6lln2_HUPpbxa/exec?v=add'>Add</a>
+    </li>
+    <li><a class="active"
+        href='https://script.google.com/a/macros/student.adelaide.edu.au/s/AKfycbxNldu1CvNhotkst_q05xsDzDkZpIcCPP_0E2_6lln2_HUPpbxa/exec?v=report'>Report</a>
+    </li>-->
+  </ul>
+  <div class="menu-bar">
+    <div style="margin-left: 20px;" id="boss"></div>
+    <div style="margin-left: 20px;" id="building"></div>
+    <button id='print-button' onclick='printReport()'>Download PDF</button>
+  </div>
+ 
+  
+
+  <!-- Generate report by Team -->
+  <div class="report-body" id="report-by-team">
+      <div id="title" class="title-bar"></div>
+      <!-- The number of staff per building -->
+      <div id="report-content1"></div>
+      <!-- Male and female ratio -->
+      <div id="report-content4" class="pie-chart"></div>
+  </div>
+
+  <!-- Generate report by Building -->
+  <div class="report-body" id="report-by-building">
+    <div id="title_building" class="title-bar"></div>
+    <div id="number_of_team"></div>
+    <div id="gender_ratio_by_building" class="pie-chart"></div>
+  </div>
+
+  <div id="test"></div>
+  <div id="bak" style="width:200%;height:200%;top:0px;position:absolute; z-index:1;background:#1B1B1B;visibility:hidden;"></div>
+</body>
+
+</html>
