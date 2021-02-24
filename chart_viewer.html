@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <base target="_top">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <style>
+    .tooltip span {
+      display: none;
+    }
+
+    .tooltip:hover span {
+      display: block;
+      position: fixed;
+      overflow: hidden;
+    }
+  </style>
+  <script>
+    var scale = 1;
+	
+	function zoomIn() {
+		scale *= 1.2;
+		zoom();
+	}
+	
+	function zoomOut() {
+		scale /= 1.2;
+		zoom();
+	}
+	
+	function zoom() {
+		document.body.style.zoom = scale;
+		
+		document.body.style.webkitTransform = 'scale('+scale+')';  // Webkit
+		document.body.style.webkitTransformOrigin = '0 0';
+		document.body.style.MozTransform = 'scale('+scale+')';  // Mozilla(firefox)
+		document.body.style.MozTransformOrigin = '0 0';
+		document.body.style.OTransform = 'scale('+scale+')';  // Opera
+		document.body.style.OTransformOrigin = '0 0';		
+	}
+  </script>
+</head>
+
+
+<body>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script src="https://code.jquery.com/jquery-latest.js"></script>
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <script type="text/javascript">
+    var staff_info = [];
+    var boss_list = [];
+    var teams_list = [];
+    
+    google.script.run.withSuccessHandler(get_account).account();
+    google.charts.load('current', { packages: ["orgchart"] });
+    google.charts.setOnLoadCallback(getData);
+    
+    var account = "";
+    function get_account(id){
+      account = id;
+    }
+
+    function getData() {
+      google.script.run.withSuccessHandler(drawChart).callData();
+    }
+
+    // ** User Story #1: create the chart
+
+    function drawChart(dataReturned) {
+      console.log(dataReturned);
+      staff_info = dataReturned;
+
+      var tmp = "<ul id='myUL'>";
+      for (var i = 0; i < dataReturned.length; i++) {
+        if (dataReturned[i][0] != "") {
+          tmp = tmp + "<li><a onclick='trigger("+i+")'>" + dataReturned[i][0] + "<div style='color:red; font-style:italic; font-size:13px;'>: " + dataReturned[i][1] + "</div><button onclick='goToInfo()' >Profile</button><div style='display: none;'>" + dataReturned[i][4] + "</div><div style='display: none;'>" + dataReturned[i][6] + "</div><div style='display: none;'>" + dataReturned[i][7] + "</div><div style='display: none;'>" + dataReturned[i][9] + "</div><div style='display: none;'>" + dataReturned[i][10] + "</div><div style='display: none;'>" + i + "</div></a></li>";
+        }
+      }
+      tmp = tmp + "</ul>";
+      document.getElementById("list").innerHTML = tmp;
+
+      var data = new google.visualization.DataTable();
+      data.addColumn('string', 'Name');
+      data.addColumn('string', 'Manager');
+      data.addColumn('string', 'ToolTip');
+
+      var tmpArr = dataReturned;
+      for (var i = 0; i < dataReturned.length; i++) {
+        tmpArr[i][20] = tmpArr[i][1]; 
+      }
+      
+      //tmpArr[i][20]: acronym of title e.g CTO, COO
+      for (var i = 0; i < tmpArr.length; i++) {
+        for (var j = 0; j < tmpArr[i][20].length; j++) {
+          if (tmpArr[i][20].charAt(j) == '(') {
+            tmpArr[i][20] = tmpArr[i][20].substr(j + 1);
+            j = 0;
+            
+          } else if (tmpArr[i][20].charAt(j) == ')') {
+            tmpArr[i][20] = tmpArr[i][20].substr(0, j);
+          }
+        }
+      }
+
+      var arr = [];
+      for (var i = 0; i < dataReturned.length; i++) {
+        arr[i] = [{ 'v': dataReturned[i][20], 'f': dataReturned[i][0] + '<div style="color:red; font-style:italic">' + dataReturned[i][1] + '</div>' }, dataReturned[i][2], ''];
+      }
+
+      data.addRows(arr);
+      // Create the chart.
+      var container = document.getElementById('chart_div');
+      var chart = new google.visualization.OrgChart(container);
+
+      container.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (e.target.tagName.toUpperCase() === 'A') {
+          console.log(e.target.href);
+        } else {
+          var selection = chart.getSelection();
+          if (selection.length > 0) {
+            var row = selection[0].row;
+            var collapse = (chart.getCollapsedNodes().indexOf(row) == -1);
+            chart.collapse(row, collapse);
+          }
+        }
+        chart.setSelection([]);
+        return false;
+      }, false);
+
+
+      // When click on the box, detailed info appears
+      var dialog = document.getElementById('detailed-info-modal');
+      var info_modal = document.getElementById("detailed-info");
+      container.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        var row = chart.getSelection()[0].row;
+        document.getElementById("name").innerHTML = dataReturned[row][0];
+        document.getElementById("title").innerHTML = dataReturned[row][20];
+        document.getElementById("gender").innerHTML = dataReturned[row][5];
+        document.getElementById("contact-info").innerHTML = dataReturned[row][6];
+        document.getElementById("email").innerHTML = dataReturned[row][7];
+        document.getElementById("location").innerHTML = dataReturned[row][4];
+        document.getElementById("team").innerHTML = dataReturned[row][9];
+        document.getElementById("year").innerHTML = "(entered in) " + dataReturned[row][10];
+
+        dialog.style.display = "block";
+
+        chart.setSelection([]);
+      }, false);
+
+      document.getElementsByClassName("close")[0].onclick = function () {
+        dialog.style.display = "none";
+      }
+      window.onclick = function (event) {
+        if (event.target == dialog) {
+          dialog.style.display = "none";
+        }
+      }
+
+      // Draw the chart, setting the allowHtml option to true for the tooltips.
+      chart.draw(data, { allowHtml: true, allowCollapse: true });
+      find_boss();
+      
+      var validation = false;
+      var idx = 0;
+      for (var i = 0; i < dataReturned.length; i++) {
+        if(dataReturned[i][7] == account){
+          validation = true;
+          idx = i;
+        }
+      }
+      
+      if(validation == false){
+        lock();
+      }
+    }
+
+    function lock(){
+      var obj = document.getElementById("bak");
+      obj.style.visibility = "visible";
+    }
+
+    // ** User Story #2: search for names in the chart
+
+
+    function searchChart() {
+      //google.script.run.withSuccessHandler(updateChart).callData();
+      google.charts.setOnLoadCallback(updateChart);
+      if (sub_chart.length == 0) {
+        for (var i = 0; i < staff_info.length; i++) {
+          sub_chart.push(staff_info[i]);
+        }
+      }
+    }
+
+    //function updateChart(dataReturned){
+    function updateChart() {
+      console.log(sub_chart);
+      var tmp = "<ul id='myUL'>";
+      for (var i = 0; i < sub_chart.length; i++) {
+        if (sub_chart[i][0] != "") {
+          tmp = tmp + "<li><a onclick='trigger("+i+")'>" + sub_chart[i][0] + "<div style='color:red; font-style:italic; font-size:13px;'>: " + sub_chart[i][1] + "</div><button onclick='goToInfo()' >Profile</button><div style='display: none;'>" + sub_chart[i][4] + "</div><div style='display: none;'>" + sub_chart[i][6] + "</div><div style='display: none;'>" + sub_chart[i][7] + "</div><div style='display: none;'>" + sub_chart[i][9] + "</div><div style='display: none;'>" + sub_chart[i][10] + "</div><div style='display: none;'>" + i + "</div></a></li>";
+        }
+      }
+      tmp = tmp + "</ul>";
+      document.getElementById("list").innerHTML = tmp;
+
+      var data = new google.visualization.DataTable();
+      data.addColumn('string', 'Name');
+      data.addColumn('string', 'Manager');
+      data.addColumn('string', 'ToolTip');
+      
+      //check whether boss is in the array
+      var check_boss_existence = [];
+      for (var i = 0; i < sub_chart.length; i++) {
+        check_boss_existence.push(false);
+      }
+      for (var i = 0; i < sub_chart.length; i++) {
+        for (var j = 0; j < sub_chart.length; j++) {
+          if (i != j && sub_chart[j][2] == sub_chart[i][20]) {
+            check_boss_existence[j] = true;
+          }
+        }
+      }
+
+      var arr = [];
+
+      for (var i = 0; i < sub_chart.length; i++) {
+        if (check_boss_existence[i] == false) {
+          arr[i] = [{ 'v': sub_chart[i][20], 'f': sub_chart[i][0] + '<div style="color:red; font-style:italic">' + sub_chart[i][1] + '</div>' }, '', ''];
+        } else {
+          arr[i] = [{ 'v': sub_chart[i][20], 'f': sub_chart[i][0] + '<div style="color:red; font-style:italic">' + sub_chart[i][1] + '</div>' }, sub_chart[i][2], ''];
+        }
+      }
+
+      // find the person
+      var criteria_list = document.getElementById("selection-criteria");
+      var criteria = criteria_list.options[criteria_list.selectedIndex].value;
+      var searched_item = document.getElementById("searching_item").value;
+      document.getElementById("searching_item").value = ''; // clear the text field
+
+      if (searched_item == "") {
+        alert('Invalid input');
+      } else {
+        var rowNum = -1;
+        var results = [];
+
+        // 1. find with full name
+        if (criteria == 'full-name') {
+          for (var i = 0; i < sub_chart.length; i++) {
+            if (sub_chart[i][0] == searched_item) {
+              results.push(i);
+            }
+          }
+        } else if (criteria == 'first-name') {
+          // 2. find with first name
+          for (var i = 0; i < sub_chart.length; i++) {
+            var first_name = getFirstName(sub_chart[i][0]);
+            if (first_name == searched_item) {
+              results.push(i);
+            }
+          }
+        } else if (criteria == 'last-name') {
+          // 3. find with last name
+          for (var i = 0; i < sub_chart.length; i++) {
+            var last_name = getLastName(sub_chart[i][0]);
+            if (last_name == searched_item) {
+              results.push(i);
+            }
+          }
+        } else if (criteria == 'location') {
+          // 4. find with location
+          for (var i = 0; i < sub_chart.length; i++) {
+            if (sub_chart[i][4] == searched_item) {
+              results.push(i);
+            }
+          }
+        }
+
+        //deal with same name by clicking the one on the filtered list
+        var num = -1;
+        var position = "";
+        var name = "";
+        var temp_rowNum = "";
+
+        for (var i = 0; i < searched_item.length; i++) {
+          if (searched_item[i] == '0' || searched_item[i] == '1' || searched_item[i] == '2' || searched_item[i] == '3' || searched_item[i] == '4' || searched_item[i] == '5' || searched_item[i] == '6' || searched_item[i] == '7' || searched_item[i] == '8' || searched_item[i] == '9') {
+            num = i;
+            break;
+          }
+        }
+
+        if (num > -1) {
+          for (var i = num; i < searched_item.length; i++) {
+            temp_rowNum = temp_rowNum + searched_item[i];
+          }
+          console.log("idx: "+temp_rowNum);
+          rowNum = parseInt(temp_rowNum);
+          results.push(rowNum);
+        }
+
+        ///////////////////////////////end of the code for dealing with the same names
+
+        // show searching result
+        if (results.length == 0) {
+          alert(name + ' is not in the list');
+          hide();
+        } else {
+          // update chart
+          data.addRows(arr);
+          // highlight the node found
+          results.forEach(item => data.setRowProperty(item, 'style', 'border: 3px solid #cc7000; background: #ffc680;'));
+          // Create the chart.
+          var container = document.getElementById('chart_div');
+          var chart = new google.visualization.OrgChart(container);
+          container.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (e.target.tagName.toUpperCase() === 'A') {
+              console.log(e.target.href);
+            } else {
+              var selection = chart.getSelection();
+              if (selection.length > 0) {
+                var row = selection[0].row;
+                var collapse = (chart.getCollapsedNodes().indexOf(row) == -1);
+                chart.collapse(row, collapse);
+              }
+            }
+            chart.setSelection([]);
+            return false;
+          }, false);
+
+
+          // When click on the box, detailed info appears
+          var dialog = document.getElementById('detailed-info-modal');
+          var info_modal = document.getElementById("detailed-info");
+          container.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+            var row = chart.getSelection()[0].row;
+
+            document.getElementById("name").innerHTML = sub_chart[row][0];
+            document.getElementById("title").innerHTML = sub_chart[row][1];
+            document.getElementById("gender").innerHTML = sub_chart[row][5];
+            document.getElementById("contact-info").innerHTML = sub_chart[row][6];
+            document.getElementById("email").innerHTML = sub_chart[row][7];
+            document.getElementById("location").innerHTML = sub_chart[row][4];
+            document.getElementById("team").innerHTML = sub_chart[row][9];
+            document.getElementById("year").innerHTML = "(entered in) " + sub_chart[row][10];
+
+            dialog.style.display = "block";
+
+            chart.setSelection([]);
+          }, false);
+
+          document.getElementsByClassName("close")[0].onclick = function () {
+            dialog.style.display = "none";
+          }
+          window.onclick = function (event) {
+            if (event.target == dialog) {
+              dialog.style.display = "none";
+            }
+          }
+
+          // Draw the chart, setting the allowHtml option to true for the tooltips.
+          chart.draw(data, { allowHtml: true, allowCollapse: true });
+        }
+      }
+      hide();
+    }
+
+    function getFirstName(fullName) {
+      var name = fullName.split(" ")[0];
+      return name;
+    }
+
+    function getLastName(fullName) {
+      var names = fullName.split(" ");
+      var name = names[names.length - 1];
+      return name;
+    }
+
+    // ** end of user story #2
+
+    //hide the filtered list
+    function hide() {
+      var con = document.getElementById("list");
+      if (con.style.display == 'none' && document.getElementById("searching_item").value != "") {
+        con.style.display = 'block';
+      } else if (document.getElementById("searching_item").value == "") {
+        con.style.display = 'none';
+      }
+    }
+
+    function myFilter() {
+      hide();
+
+      var input, filter, ul, li, a, i, txtValue;
+      input = document.getElementById("searching_item");
+      filter = input.value.toUpperCase();
+      ul = document.getElementById("myUL");
+      li = ul.getElementsByTagName("li");
+      for (i = 0; i < li.length; i++) {
+        a = li[i].getElementsByTagName("a")[0];
+        txtValue = a.textContent || a.innerText;
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+          li[i].style.display = "";
+        } else {
+          li[i].style.display = "none";
+        }
+      }
+    }
+
+    //when one staff is clicked on the filtered list, return this staff's row number
+    function trigger(e) {
+      var searched_item = e.toString();
+      var num = 0;
+      var temp_rowNum = "";
+      for (var i = 0; i < searched_item.length; i++) {
+        if (searched_item[i] == '0' || searched_item[i] == '1' || searched_item[i] == '2' || searched_item[i] == '3' || searched_item[i] == '4' || searched_item[i] == '5' || searched_item[i] == '6' || searched_item[i] == '7' || searched_item[i] == '8' || searched_item[i] == '9') {
+          num = i;
+          break;
+        }
+      }
+
+      for (var i = num; i < searched_item.length; i++) {
+        temp_rowNum = temp_rowNum + searched_item[i];
+      }
+      var row = parseInt(temp_rowNum);
+      document.getElementById("searching_item").value = row.toString();
+      var dialog = document.getElementById('detailed-info-modal');
+      var info_modal = document.getElementById("detailed-info");
+      
+      if (sub_chart.length == 0) {
+        document.getElementById("name").innerHTML = staff_info[row][0];
+        document.getElementById("title").innerHTML = staff_info[row][1];
+        document.getElementById("gender").innerHTML = staff_info[row][5];
+        document.getElementById("contact-info").innerHTML = staff_info[row][6];
+        document.getElementById("email").innerHTML = staff_info[row][7];
+        document.getElementById("location").innerHTML = staff_info[row][4];
+        document.getElementById("team").innerHTML = staff_info[row][9];
+        document.getElementById("year").innerHTML = "(entered in) " + staff_info[row][10];
+
+      } else {
+        document.getElementById("name").innerHTML = sub_chart[row][0];
+        document.getElementById("title").innerHTML = sub_chart[row][1];
+        document.getElementById("gender").innerHTML = sub_chart[row][5];
+        document.getElementById("contact-info").innerHTML = sub_chart[row][6];
+        document.getElementById("email").innerHTML = sub_chart[row][7];
+        document.getElementById("location").innerHTML = sub_chart[row][4];
+        document.getElementById("team").innerHTML = sub_chart[row][9];
+        document.getElementById("year").innerHTML = "(entered in) " + sub_chart[row][10];
+      }
+      
+      document.getElementById("click").click();
+      myFilter();
+    }
+
+    function goToInfo() {
+      var dialog = document.getElementById('detailed-info-modal');
+      var info_modal = document.getElementById("detailed-info");
+      
+      dialog.style.display = "block";
+      document.getElementsByClassName("close")[0].onclick = function () {
+        dialog.style.display = "none";
+      }
+    }
+
+    ///////////////////////////////////////////Beginning of Subchart////////////////////////////////////////////////////// 
+    function find_boss() {
+      //find and add bosses
+      for (var i = 0; i < staff_info.length; i++) {
+        for (var j = 0; j < staff_info.length; j++) {
+          if (i != j && staff_info[i][20] == staff_info[j][2] && staff_info[i][20] != "") {
+            boss_list.push(staff_info[i]);
+          }
+        }
+      }
+      //delete duplicate
+      if (boss_list.length != 0) {
+        for (var i = 0; i < boss_list.length; i++) {
+          for (var j = 0; j < boss_list.length; j++) {
+            if (i != j && boss_list[i][0] == boss_list[j][0]) {
+              boss_list.splice(j, 1);
+              i=0;
+              j=0;
+            }
+          }
+        }
+      }
+      //create dropdown menu
+      var tmp = "<select onchange='subchart_element(this.value)'><option value='Person In Charge'>Person In Charge<option value='Entire graph'>Entire graph";
+      for (var i = 0; i < boss_list.length; i++) {
+        tmp = tmp + "<option value='" + boss_list[i][0] + "'>" + boss_list[i][0] + ": " + boss_list[i][1];
+      }
+      tmp = tmp + "</select>";
+      document.getElementById("boss").innerHTML = tmp;
+    }
+    
+    var sub_chart = [];
+    function subchart_element(boss_name) {
+      
+      var HoD = [];
+      if (sub_chart.length > 0) {
+        sub_chart.splice(0, sub_chart.length)
+      }
+      console.log(sub_chart.length);
+      var element_num = -1;
+      for (var i = 0; i < staff_info.length; i++) {
+        if (boss_name == staff_info[i][0]) {
+          element_num = i;
+          sub_chart.push(staff_info[i]);
+
+        }
+        if (element_num != -1 && element_num != i && staff_info[element_num][20] == staff_info[i][2]) {
+          sub_chart.push(staff_info[i]);
+        }
+      }
+      
+      for (var i = 0; i < sub_chart.length; i++) {
+        if (boss_name == sub_chart[i][0]) {
+          element_num = i;
+        }
+        if (element_num != i){
+          var res = sub_chart[i][1].split(" ");
+          if(res[0] == "Head" || res[0] == "head" || res[0] == "chief" || res[0] == "Chief"){
+            HoD.push(sub_chart[i][0]);
+          }
+        }
+      }
+      
+      element_num = -1;
+      if(HoD.length != 0){
+        for (var j = 0; j < HoD.length; j++) {
+          for (var i = 0; i < staff_info.length; i++) {
+            var res = staff_info[i][1].split(" ")
+            if (HoD[j] == staff_info[i][0]) {
+              element_num = i;
+      
+            }
+            if (element_num != -1 && element_num != i && staff_info[element_num][20] == staff_info[i][2] && res[0] == "Head") {
+              HoD.push(staff_info[i][0]);
+              
+            } else if (element_num != -1 && element_num != i && staff_info[element_num][20] == staff_info[i][2] && res[0] == "head") {
+              HoD.push(staff_info[i][0]);
+            }
+          }
+        }
+      }
+      
+      element_num = -1;
+      if(HoD.length != 0){
+        for (var j = 0; j < HoD.length; j++) {
+          for (var i = 0; i < staff_info.length; i++) {
+            if (HoD[j] == staff_info[i][0]) {
+              element_num = i;
+            }
+            if (element_num != -1 && element_num != i && staff_info[element_num][20] == staff_info[i][2]) {
+              sub_chart.push(staff_info[i]);
+            }
+          }
+        }
+      }
+     
+      google.charts.setOnLoadCallback(show_subchart);
+      if (boss_name == "Entire graph" || boss_name == "Person In Charge") {
+        for (var i = 0; i < staff_info.length; i++) {
+          sub_chart.push(staff_info[i]);
+        }
+        google.charts.setOnLoadCallback(show_subchart);
+      } else {
+        google.charts.setOnLoadCallback(show_subchart);
+      }
+    }
+
+    function show_subchart() {
+      var data = new google.visualization.DataTable();
+      data.addColumn('string', 'Name');
+      data.addColumn('string', 'Manager');
+      data.addColumn('string', 'ToolTip');
+
+      var tmp = "<ul id='myUL'>";
+      for (var i = 0; i < sub_chart.length; i++) {
+        if (sub_chart[i][0] != "") {
+          tmp = tmp + "<li><a onclick='trigger("+i+")'>" + sub_chart[i][0] + "<div style='color:red; font-style:italic; font-size:13px;'>: " + sub_chart[i][1] + "</div><button onclick='goToInfo()' >Profile</button><div style='display: none;'>" + sub_chart[i][4] + "</div><div style='display: none;'>" + sub_chart[i][6] + "</div><div style='display: none;'>" + sub_chart[i][7] + "</div><div style='display: none;'>" + sub_chart[i][9] + "</div><div style='display: none;'>" + sub_chart[i][10] + "</div><div style='display: none;'>" + i + "</div></a></li>";
+        }
+      }
+      tmp = tmp + "</ul>";
+      document.getElementById("list").innerHTML = tmp;
+
+      var tmpArr = sub_chart;
+      for (var i = 0; i < sub_chart.length; i++) {
+        tmpArr[i][20] = tmpArr[i][1];
+      }
+      
+      for (var i = 0; i < tmpArr.length; i++) {
+        for (var j = 0; j < tmpArr[i][20].length; j++) {
+          if (tmpArr[i][20].charAt(j) == '(') {
+            tmpArr[i][20] = tmpArr[i][20].substr(j + 1);
+            j = 0;
+          } else if (tmpArr[i][20].charAt(j) == ')') {
+            tmpArr[i][20] = tmpArr[i][20].substr(0, j);
+          }
+        }
+      }
+
+      //check whether boss is in the array
+      var check_boss_existence = [];
+      for (var i = 0; i < sub_chart.length; i++) {
+        check_boss_existence.push(false);
+      }
+      for (var i = 0; i < sub_chart.length; i++) {
+        for (var j = 0; j < sub_chart.length; j++) {
+          if (i != j && sub_chart[j][2] == sub_chart[i][20]) {
+            check_boss_existence[j] = true;
+          }
+        }
+      }
+
+      var arr = [];
+      for (var i = 0; i < sub_chart.length; i++) {
+        if (check_boss_existence[i] == false) {
+          arr[i] = [{ 'v': sub_chart[i][20], 'f': sub_chart[i][0] + '<div style="color:red; font-style:italic">' + sub_chart[i][1] + '</div>' }, '', ''];
+        } else {
+          arr[i] = [{ 'v': sub_chart[i][20], 'f': sub_chart[i][0] + '<div style="color:red; font-style:italic">' + sub_chart[i][1] + '</div>' }, sub_chart[i][2], ''];
+        }
+      }
+
+      data.addRows(arr);
+
+      // Create the chart.
+      var container = document.getElementById('chart_div');
+      var chart = new google.visualization.OrgChart(container);
+
+      //make the chart collapsible
+      container.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (e.target.tagName.toUpperCase() === 'A') {
+          console.log(e.target.href);
+
+        } else {
+          var selection = chart.getSelection();
+          if (selection.length > 0) {
+            var row = selection[0].row;
+            var collapse = (chart.getCollapsedNodes().indexOf(row) == -1);
+            chart.collapse(row, collapse);
+          }
+        }
+        chart.setSelection([]);
+        return false;
+      }, false);
+
+      // When click on the box, detailed info appears
+      var dialog = document.getElementById('detailed-info-modal');
+      var info_modal = document.getElementById("detailed-info");
+      container.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        var row = chart.getSelection()[0].row;
+
+        document.getElementById("name").innerHTML = sub_chart[row][0];
+        document.getElementById("title").innerHTML = sub_chart[row][1];
+        document.getElementById("gender").innerHTML = sub_chart[row][5];
+        document.getElementById("contact-info").innerHTML = sub_chart[row][6];
+        document.getElementById("email").innerHTML = sub_chart[row][7];
+        document.getElementById("location").innerHTML = sub_chart[row][4];
+        document.getElementById("team").innerHTML = sub_chart[row][9];
+        document.getElementById("year").innerHTML = "(entered in) " + sub_chart[row][10];
+
+        dialog.style.display = "block";
+
+        chart.setSelection([]);
+      }, false);
+
+      document.getElementsByClassName("close")[0].onclick = function () {
+        dialog.style.display = "none";
+      }
+      window.onclick = function (event) {
+        if (event.target == dialog) {
+          dialog.style.display = "none";
+        }
+      }
+
+      chart.draw(data, { 'allowHtml': true });
+    }
+    /////////////////////////////////////////////// End of Subchart/////////////////////////////////////////////////////// 
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    #searching_item {
+      background-image: url('/css/searchicon.png');
+      background-position: 10px 12px;
+      background-repeat: no-repeat;
+      width: 100%;
+      font-size: 16px;
+      padding: 12px 20px 12px 40px;
+      border: 1px solid #ddd;
+      margin-bottom: 12px;
+    }
+
+    #myUL {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    #myUL li a {
+      border: 1px solid #ddd;
+      margin-top: -1px;
+      /* Prevent double borders */
+      background-color: #f6f6f6;
+      padding: 12px;
+      text-decoration: none;
+      font-size: 18px;
+      color: black;
+      display: block
+    }
+
+    #myUL li a:hover:not(.header) {
+      background-color: #eee;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    ul.topnav {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #333;
+    }
+
+    ul.topnav li {
+      float: left;
+    }
+
+    ul.topnav li a {
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+
+    ul.topnav li a:hover:not(.active) {
+      background-color: #111;
+    }
+
+    ul.topnav li a.active {
+      background-color: #4CAF50;
+    }
+
+    ul.topnav li.right {
+      float: right;
+    }
+
+    @media screen and (max-width: 600px) {
+
+      ul.topnav li.right,
+      ul.topnav li {
+        float: none;
+      }
+    }
+
+    .detailed-info {
+      display: none;
+      /* Hidden by default */
+      position: fixed;
+      /* Stay in place */
+      z-index: 1;
+      /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%;
+      /* Full width */
+      height: 100%;
+      /* Full height */
+      overflow: auto;
+      /* Enable scroll if needed */
+      background-color: rgb(0, 0, 0);
+      /* Fallback color */
+      background-color: rgba(0, 0, 0, 0.4);
+      /* Black w/ opacity */
+    }
+
+    .info-display {
+      width: 50px;
+      margin-top: 30px;
+      margin-left: 30%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .info-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      /* 15% from the top and centered */
+      padding: 20px;
+      border: 1px solid #888;
+      width: 25%;
+      /* Could be more or less, depending on screen size */
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .info-entry {
+      width: 200px;
+      display: flex;
+      flex-direction: row;
+    }
+
+    .info {
+      margin-left: 30px;
+    }
+  </style>
+
+  <ul class="topnav">
+    <li><?var url = getScriptUrl();?><a href='<?=url?>'>Home</a></li>
+    <li><?var url = getScriptUrl();?><a class="active" href='<?=url?>?v=chart_viewer'>Chart</a></li>
+    <li><?var url = getScriptUrl();?><a href='<?=url?>?v=list_viewer'>List</a></li>
+    <li><?var url = getScriptUrl();?><a href='<?=url?>?v=report'>Report</a></li>
+    <li><?var url = getScriptUrl();?><a href='<?=url?>?v=profile' style="position: absolute; right: 0px;">Profile</a></li>
+  </ul>
+  <br>
+
+  <div style="height: 30px; display: flex; justify-content: flex-start; align-items: stretch; margin-bottom: 40px;" id="dashboard">
+    <select id="selection-criteria" name="selection-criteria" style="margin-right: 10px; margin-left: 30px;">
+      <option value="full-name">Full name</option>
+      <option value="first-name">First name</option>
+      <option value="last-name">Last name</option>
+      <option value="location">Location</option>
+    </select>
+    <input type="text" placeholder="Search for ..." id="searching_item" onkeyup="myFilter()" style="width: 300px; height: 30px;">
+    <button id="click" style="margin-left: 10px; width: 120px; text-align: center;" onclick="searchChart()">Find all in chart</button>
+    <p style="position: absolute; right: 0px; font-size: 15px; background-color:#00FFFF;"><i>Click on the box to collapse; right click on the box to show more information.</i></p>
+  </div>
+  <div id="list" style="display: none;"></div>
+  <div style="margin-left: 20px;" id="boss" class="inline block form-group"></div>
+  <p class="inline form-group"><button onclick="zoomIn()">Zoom In</button><button onclick="zoomOut()">Zoom Out</button></p>
+  <div id="chart_div"></div>
+
+  <div id="detailed-info-modal" class="detailed-info">
+    <div class="info-content">
+      <span class="close">&times;</span>
+      <div class="info-display">
+        <div class="info-entry">
+          <i class="material-icons" style="position: relative; top: 12px;">person</i>
+          <p id="name" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <i class="material-icons" style="position: relative; top: 12px;">domain</i>
+          <p id="title" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <span class="material-icons" style="position: relative; top: 12px;">groups</span>
+          <p id="team" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <span class="material-icons" style="position: relative; top: 12px;">directions_run</span>
+          <p id="year" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <span class="material-icons" style="position: relative; top: 12px;">wc</span>
+          <p id="gender" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <span class="material-icons" style="position: relative; top: 12px;">phone</span>
+          <p id="contact-info" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <span class="material-icons" style="position: relative; top: 12px;">email</span>
+          <p id="email" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <i class="material-icons" style="position: relative; top: 12px;">location_on</i>
+          <p id="location" class="info"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="bak" style="width:200%;height:200%;top:0px;position:absolute; z-index:1;background:#1B1B1B;visibility:hidden;"></div>
+</body>
+
+</html>
