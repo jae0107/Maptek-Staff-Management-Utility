@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+      }
+  
+      ul.topnav {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #333;
+      }
+  
+      ul.topnav li {
+        float: left;
+      }
+  
+      ul.topnav li a {
+        display: block;
+        color: white;
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+      }
+  
+      ul.topnav li a.active {
+        background-color: #4CAF50;
+      }
+  
+      ul.topnav li.right {
+        float: right;
+      }
+  
+      @media screen and (max-width: 600px) {
+  
+        ul.topnav li.right,
+        ul.topnav li {
+          float: none;
+        }
+      }
+  
+      .menu-bar {
+        display: flex;
+        flex-direction: row;
+        margin-top: 30px;
+      }
+  
+      #print-button {
+        position: absolute;
+        right: 30px;
+      }
+  
+      .report-body {
+        display: flex;
+        flex-direction: column;
+        width: 90%;
+        position: relative;
+        top: 30px;
+        left: 50px;
+      }
+  
+      #report-by-team {
+        /* visibility: hidden; */
+      }
+  
+      #report-by-building {
+        /* visibility: hidden; */
+      }
+  
+      .title-bar {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        height: 50px;
+      }
+  
+      h2 {
+        font-size: 1.3em;
+      }
+  
+      #report-content1 {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+  
+      .pie-chart {
+        width: 100%;
+        height: 400px;
+      }
+  
+      .row {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+      }
+    </style>
+    <script type="text/javascript">
+      var staff_info = [];
+      var title = []; //bosses' titles
+      var teams_list = [];
+      var building_list = [];
+      //var index = [];
+      
+      google.script.run.withSuccessHandler(get_account).account();
+      google.script.run.withSuccessHandler(navigation_bar).getScriptUrl();
+      google.script.run.withSuccessHandler(loadData).callData();
+      
+      var account = "";
+      function get_account(id){
+        account = id;
+      }
+      
+      var nav_bar = "";
+      function navigation_bar(nav){
+        console.log(nav);
+        nav_bar = nav;
+      }
+          
+      function loadData(dataReturned) {//#, name, title, report to, location, gender, phone, email, authority, team, year
+        //find boss, team, building
+        for (var i = 0; i < dataReturned.length; i++) {
+          if(dataReturned[i][0] != ""){
+            if (!title.includes(dataReturned[i][2]) && dataReturned[i][2] != ""){
+              title.push(dataReturned[i][2]); //bosses' titles
+            }
+            if (!teams_list.includes(dataReturned[i][9]) && dataReturned[i][9] != ""){
+              teams_list.push(dataReturned[i][9]);
+            }
+            if (!building_list.includes(dataReturned[i][4]) && dataReturned[i][4] != ""){
+              building_list.push(dataReturned[i][4]);
+            }
+          }
+        }
+        
+        for (var i = 0; i < dataReturned.length; i++) {
+          staff_info.push(dataReturned[i]);
+        }
+        
+        var output = "";
+        var num = 0;
+        for (var i = 0; i < dataReturned.length; i++) {
+          if(dataReturned[i][0] != ""){
+            num++;
+            //index.push(num);
+            output += "<tr id='staff_"+i.toString()+"'>";
+            output += "<td id='row"+num.toString()+"'>"+num.toString()+"</td>";
+            output += "<td><span id='name"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+dataReturned[i][0]+"</span></td>";
+            output += "<td><span id='title"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+dataReturned[i][1]+"</span></td>";
+            output += "<td><span id='boss"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+boss_dropdown(dataReturned[i][2], i.toString())+"</span></td>";
+            output += "<td><span id='location"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+location_dropdown(dataReturned[i][4], i.toString())+"</span></td>";
+            output += "<td><span id='gender"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+gender_dropdown(dataReturned[i][5], i.toString())+"</span></td>";
+            output += "<td><span id='phone"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+dataReturned[i][6]+"</span></td>";
+            output += "<td><span id='email"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+dataReturned[i][7]+"</span></td>";
+            output += "<td><span id='authority"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+authority_dropdown(dataReturned[i][8], i.toString())+"</span></td>";
+            output += "<td><span id='team"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+team_dropdown(dataReturned[i][9], i.toString())+"</span></td>";
+            output += "<td><span id='year"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+dataReturned[i][10]+"</span></td>";
+            output += "<td><input type='button' class='checkBtn' onclick='save("+i.toString()+")' value='Save'><input type='button' onclick='del("+i.toString()+", "+num.toString()+")' value='Delete'></td>";
+            output += "</tr>";
+          }
+        }
+        $('#staff').html(output);
+        var screen = '<div id="bak" style="width:100%;height:100%;top:0px;position:absolute; z-index:1;background:#1B1B1B;visibility:hidden;"></div>';
+        $('#lock').html(screen);
+        console.log(staff_info);
+        
+        console.log(account);
+        var validation = false;
+        var idx = 0;
+        for (var i = 0; i < dataReturned.length; i++) {
+          if(dataReturned[i][7] == account){
+            validation = true;
+            idx = i;
+          }
+        }
+              
+        if(dataReturned[idx][8] == "editor" || dataReturned[idx][8] == "Editor"){
+          document.getElementById("home").innerHTML = "<li><a href='" + nav_bar + "'>Home</a></li>";
+          document.getElementById("chart").innerHTML = "<li><a href='" + nav_bar + "?v=chart'>Chart</a></li>";
+          document.getElementById("list").innerHTML = "<li><a href='" + nav_bar + "?v=list'>List</a></li>";
+          document.getElementById("report").innerHTML = "<li><a href='" + nav_bar + "?v=report'>Report</a></li>";
+          document.getElementById("profile").innerHTML = "<li><a href='" + nav_bar + "?v=profile'>Profile</a></li>";
+          document.getElementById("add").innerHTML = "<li><a href='" + nav_bar + "?v=add'>Add</a></li>";
+          document.getElementById("edit").innerHTML = "<li><a class='active' href='" + nav_bar + "?v=edit'>Edit</a></li>";
+        } else {
+          document.getElementById("home").innerHTML = "<li><a href='" + nav_bar + "'>Home</a></li>";
+          document.getElementById("chart").innerHTML = "<li><a href='" + nav_bar + "?v=chart_viewer'>Chart</a></li>";
+          document.getElementById("list").innerHTML = "<li><a href='" + nav_bar + "?v=list_viewer'>List</a></li>";
+          document.getElementById("report").innerHTML = "<li><a href='" + nav_bar + "?v=report'>Report</a></li>";
+          document.getElementById("profile").innerHTML = "<li><a href='" + nav_bar + "?v=profile'>Profile</a></li>";
+          lock();
+        }
+              
+        if(validation == false){
+          lock();
+        }
+      }
+      
+      function lock(){
+        var obj = document.getElementById("bak");
+	    obj.style.visibility = "visible";
+      }
+      
+      function update() {//#, name, title, report to, location, gender, phone, email, authority, team, year
+        console.log("update");
+        var output = "";
+        $('#staff').html(output);
+            
+        var num = 0;
+        for (var i = 0; i < staff_info.length; i++) {
+          if(staff_info[i][0] != ""){
+            num++;
+            //index.push(num);
+            output += "<tr id='staff_"+i.toString()+"'>";
+            output += "<td id='row"+num.toString()+"'>"+num.toString()+"</td>";
+            output += "<td><span id='name"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+staff_info[i][0]+"</span></td>";
+            output += "<td><span id='title"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+staff_info[i][1]+"</span></td>";
+            output += "<td><span id='boss"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+boss_dropdown(staff_info[i][2], i.toString())+"</span></td>";
+            output += "<td><span id='location"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+location_dropdown(staff_info[i][4], i.toString())+"</span></td>";
+            output += "<td><span id='gender"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+gender_dropdown(staff_info[i][5], i.toString())+"</span></td>";
+            output += "<td><span id='phone"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+staff_info[i][6]+"</span></td>";
+            output += "<td><span id='email"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+staff_info[i][7]+"</span></td>";
+            output += "<td><span id='authority"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+authority_dropdown(staff_info[i][8], i.toString())+"</span></td>";
+            output += "<td><span id='team"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+team_dropdown(staff_info[i][9], i.toString())+"</span></td>";
+            output += "<td><span id='year"+i.toString()+"' class='cursor staff' contenteditable='true' data-field='name' data-id='"+i.toString()+"'>"+staff_info[i][10]+"</span></td>";
+            output += "<td><input type='button' class='checkBtn' onclick='save("+i.toString()+")' value='Save'><input type='button' onclick='del("+i.toString()+", "+num.toString()+")' value='Delete'></td>";
+            output += "</tr>";
+          }
+        }
+        $('#staff').html(output);
+        
+      }
+      
+      function boss_dropdown(boss, id){
+        if(title.length != 0){
+          var tmp_option = "<select id='boss_title"+id+"'><option>";
+          for (var i = 0; i < title.length; i++) {
+            if(boss == title[i]){
+              tmp_option = tmp_option + "<option selected='selected' value='" + title[i] + "'>" + title[i];
+              
+            } else {
+              tmp_option = tmp_option + "<option value='" + title[i] + "'>" + title[i];
+            }
+          }
+          tmp_option = tmp_option + "</select>"; 
+        }
+        return tmp_option;
+      }
+      
+      function location_dropdown(building, id){
+        if(building_list.length != 0){
+          var tmp_option = "<select id='building"+id+"'><option>";
+          for (var i = 0; i < building_list.length; i++) {
+            if(building == building_list[i]){
+              tmp_option = tmp_option + "<option selected='selected' value='" + building_list[i] + "'>" + building_list[i];
+              
+            } else {
+              tmp_option = tmp_option + "<option value='" + building_list[i] + "'>" + building_list[i];
+            }
+          }
+          tmp_option = tmp_option + "</select>"; 
+        }
+        return tmp_option;
+      }
+      
+      function team_dropdown(team, id){
+        if(teams_list.length != 0){
+          var tmp_option = "<select id='department"+id+"'><option>";
+          for (var i = 0; i < teams_list.length; i++) {
+            if(team == teams_list[i]){
+              tmp_option = tmp_option + "<option selected='selected' value='" + teams_list[i] + "'>" + teams_list[i];
+              
+            } else {
+              tmp_option = tmp_option + "<option value='" + teams_list[i] + "'>" + teams_list[i];
+            }
+          }
+          tmp_option = tmp_option + "</select>"; 
+        }
+        return tmp_option;
+      }
+      
+      function gender_dropdown(gender, id){
+        var tmp_option = "<select id='male_or_female"+id+"'><option>"
+        if(gender == "Male" || gender == "male"){
+          tmp_option = tmp_option + "<option selected='selected'>Male<option>Female";
+          
+        } else if(gender == "Female" || gender == "female"){
+          tmp_option = tmp_option + "<option>Male<option selected='selected'>Female";
+        }
+        tmp_option = tmp_option + "</select>"; 
+        return tmp_option;
+      }
+      
+      function authority_dropdown(authority, id){
+        var tmp_option = "<select id='editor_or_viewer"+id+"'><option>"
+        if(authority == "editor" || authority == "Editor"){
+          tmp_option = tmp_option + "<option selected='selected'>Editor<option>Viewer";
+          
+        } else if(authority == "viewer" || authority == "Viewer"){
+          tmp_option = tmp_option + "<option>Editor<option selected='selected'>Viewer";
+        }
+        tmp_option = tmp_option + "</select>"; 
+        return tmp_option;
+      }
+      
+      function del(id, table_row){
+        var confirmation = confirm("Are you sure you want to delete?");
+        if(confirmation){
+          var userInfo = {};
+          
+          var my_tbody = document.getElementById('staff');
+          if (my_tbody.rows.length < 1) return;
+          my_tbody.deleteRow(table_row-1);
+          
+          userInfo.row = id+2;
+          google.script.run.del(userInfo);
+          staff_info.splice(parseInt(id), 1);
+          console.log(staff_info);
+          update();
+          alert("Deleted!");
+        }
+      }
+      
+      function save(id){        
+        var confirmation = confirm("Are you sure you want to save?");
+        if(confirmation){
+          var userInfo = {};
+            
+          userInfo.yourname = document.getElementById("name"+id).innerText;
+          userInfo.title = document.getElementById("title"+id).innerText;
+          userInfo.boss = document.getElementById("boss_title"+id).value;
+          userInfo.location = document.getElementById("building"+id).value;
+          userInfo.gender = document.getElementById("male_or_female"+id).value;
+          userInfo.contact = document.getElementById("phone"+id).innerText;
+          userInfo.email = document.getElementById("email"+id).innerText;
+          userInfo.authority = document.getElementById("editor_or_viewer"+id).value;
+          userInfo.department = document.getElementById("department"+id).value;
+          userInfo.year = document.getElementById("year"+id).innerText;
+          userInfo.row = id+2;
+            
+          staff_info[parseInt(id)][20] = document.getElementById("name"+id).innerText;
+          staff_info[parseInt(id)][2] = document.getElementById("title"+id).innerText;
+          staff_info[parseInt(id)][1] = document.getElementById("boss_title"+id).value;
+          staff_info[parseInt(id)][4] = document.getElementById("building"+id).value;
+          staff_info[parseInt(id)][5] = document.getElementById("male_or_female"+id).value;
+          staff_info[parseInt(id)][6] = document.getElementById("phone"+id).innerText;
+          staff_info[parseInt(id)][7] = document.getElementById("email"+id).innerText;
+          staff_info[parseInt(id)][8] = document.getElementById("editor_or_viewer"+id).value;
+          staff_info[parseInt(id)][9] = document.getElementById("department"+id).value;
+          staff_info[parseInt(id)][10] = document.getElementById("year"+id).innerText;
+            
+          console.log(staff_info);
+          google.script.run.update(userInfo);
+          alert("Saved!");
+        }
+      }
+    </script>
+    
+  <ul class="topnav">
+    <div id="home"></div>
+    <div id="chart"></div>
+    <div id="list"></div>
+    <div id="report"></div>
+    <div id="add"></div>
+    <div id="edit"></div>
+    <div id="profile" style="position: absolute; right: 0px;"></div>
+  </ul>
+  
+	<div id="lock"></div>
+    <table class="table table-striped" border="1" style = "text-align: center;">
+      <thead>
+        <tr bgcolor="skyblue" >
+          <th style = "text-align: center;"><strong>#</strong></th>
+          <th style = "text-align: center;"><strong>Name</strong></th>
+          <th style = "text-align: center;"><strong>Title</strong></th>
+          <th style = "text-align: center;"><strong>Reports to</strong></th>
+          <th style = "text-align: center;"><strong>Location</strong></th>
+          <th style = "text-align: center;"><strong>Gender</strong></th>
+          <th style = "text-align: center;"><strong>Contact Number</strong></th>
+          <th style = "text-align: center;"><strong>Email</strong></th>
+          <th style = "text-align: center;"><strong>Authority</strong></th>
+          <th style = "text-align: center;"><strong>Team</strong></th>
+          <th style = "text-align: center;"><strong>Year</strong></th>
+          <th style = "text-align: center;"><strong></strong></th>
+        </tr>
+      </thead>
+      <tbody id="staff">
+        
+      </tbody>
+    </table>
+  </body>
+</html>
