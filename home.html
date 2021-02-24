@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+     
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script>
+      google.script.run.withSuccessHandler(get_account).account();
+      google.script.run.withSuccessHandler(navigation_bar).getScriptUrl();
+      google.script.run.withSuccessHandler(loadData).callData();
+      
+      var account = "";
+      function get_account(id){
+        account = id;
+      }
+      
+      var nav_bar = "";
+      function navigation_bar(nav){
+        console.log(nav);
+        nav_bar = nav;
+      }
+      
+      function loadData(dataReturned) {
+        var validation = false;
+        var idx = 0;
+        for (var i = 0; i < dataReturned.length; i++) {
+          if(dataReturned[i][7] == account){
+            validation = true;
+            idx = i;
+          }
+        }
+       
+        if(dataReturned[idx][8] == "editor" || dataReturned[idx][8] == "Editor"){
+          document.getElementById("chart").innerHTML = "<a href='" + nav_bar + "?v=chart' id='btn' class='waves-effect waves-light btn blue lighten-4 ' style='width: 300px;'><i class='material-icons left'></i>Search in the Chart</a>";
+          document.getElementById("list").innerHTML = "<a href='" + nav_bar + "?v=list' id='btn' class='waves-effect waves-light btn blue lighten-4 ' style='width: 300px;'><i class='material-icons left'></i>Search in the Staff List</a>";
+          document.getElementById("report").innerHTML = "<a href='" + nav_bar + "?v=report' id='btn' class='waves-effect waves-light btn blue lighten-4 ' style='width: 300px;'><i class='material-icons left'></i>Generate Report</a>";
+          document.getElementById("profile").innerHTML = "<a href='" + nav_bar + "?v=profile' id='btn' class='waves-effect waves-light btn blue lighten-4 ' style='width: 300px;'><i class='material-icons left'></i>My Profile</a>";
+          document.getElementById("add").innerHTML = "<a href='" + nav_bar + "?v=add' id='btn' class='waves-effect waves-light btn blue lighten-4 ' style='width: 300px;'><i class='material-icons left'></i>Add Staff</a>";
+          document.getElementById("edit").innerHTML = "<a href='" + nav_bar + "?v=edit' id='btn' class='waves-effect waves-light btn blue lighten-4 ' style='width: 300px;'><i class='material-icons left'></i>Edit Staff Information</a>";
+        } else {
+          document.getElementById("chart").innerHTML = "<a href='" + nav_bar + "?v=chart_viewer' id='btn' class='waves-effect waves-light btn blue lighten-4 ' style='width: 300px;'><i class='material-icons left'></i>Search in the Chart</a>";
+          document.getElementById("list").innerHTML = "<a href='" + nav_bar + "?v=list_viewer' id='btn' class='waves-effect waves-light btn blue lighten-4 ' style='width: 300px;'><i class='material-icons left'></i>Search in the Staff List</a>";
+          document.getElementById("report").innerHTML = "<a href='" + nav_bar + "?v=report' id='btn' class='waves-effect waves-light btn blue lighten-4 ' style='width: 300px;'><i class='material-icons left'></i>Generate Report</a>";
+          document.getElementById("profile").innerHTML = "<a href='" + nav_bar + "?v=profile' id='btn' class='waves-effect waves-light btn blue lighten-4 ' style='width: 300px;'><i class='material-icons left'></i>My Profile</a>";
+        }
+        
+        if(validation == false){
+          lock();
+        }
+      }
+      
+      function lock(){
+        var obj = document.getElementById("bak");
+	    obj.style.visibility = "visible";
+      }
+    </script>
+    
+    <h1 class="blue-text text-darken-2" style="margin-bottom: 50px; font-size: 4em;">Welcome to Maptek Staff Management Utility</h1>
+    <div id="chart" class="row"></div>
+    <div id="list" class="row"></div>
+    <div id="report" class="row"></div>
+    <div id="profile" class="row"></div>
+    <div id="add" class="row"></div>
+    <div id="edit" class="row"></div>
+    <div id="bak" style="width:200%;height:200%;top:0px;position:absolute; z-index:1;background:#1B1B1B;visibility:hidden;"></div>
+  </body>
+</html>
