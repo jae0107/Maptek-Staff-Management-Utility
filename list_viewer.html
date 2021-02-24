@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+  <head class="header" role="banner">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <base target="_top">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  </head>
+   
+  <body>
+     <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+     
+     <style>
+        * {
+          box-sizing: border-box;
+        }
+        
+        #myInput {
+          background-image: url('/css/searchicon.png');
+          background-position: 10px 12px;
+          background-repeat: no-repeat;
+          width: 100%;
+          font-size: 16px;
+          padding: 12px 20px 12px 40px;
+          border: 1px solid #ddd;
+          margin-bottom: 12px;
+        }
+        
+        #myUL {
+          list-style-type: none;
+          padding: 0;
+          margin: 0;
+        }
+        
+        #myUL li a {
+          border: 1px solid #ddd;
+          margin-top: -1px; /* Prevent double borders */
+          background-color: #f6f6f6;
+          padding: 12px;
+          text-decoration: none;
+          font-size: 18px;
+          color: black;
+          display: block
+        }
+        
+        #myUL li a:hover:not(.header) {
+          background-color: #eee;
+        }
+        
+        body {margin: 0;}
+
+        ul.topnav {
+          list-style-type: none;
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+          background-color: #333;
+        }
+      
+        ul.topnav li {float: left;}
+      
+        ul.topnav li a {
+          display: block;
+          color: white;
+          text-align: center;
+          padding: 14px 16px;
+          text-decoration: none;
+        }
+      
+        ul.topnav li a:hover:not(.active) {background-color: #111;}
+      
+        ul.topnav li a.active {background-color: #4CAF50;}
+      
+        ul.topnav li.right {float: right;}
+      
+        @media screen and (max-width: 600px) {
+          ul.topnav li.right, 
+          ul.topnav li {float: none;}
+        }
+        
+        .detailed-info {
+          display: none;
+          /* Hidden by default */
+          position: fixed;
+          /* Stay in place */
+          z-index: 1;
+          /* Sit on top */
+          left: 0;
+          top: 0;
+          width: 100%;
+          /* Full width */
+          height: 100%;
+          /* Full height */
+          overflow: auto;
+          /* Enable scroll if needed */
+          background-color: rgb(0, 0, 0);
+          /* Fallback color */
+          background-color: rgba(0, 0, 0, 0.4);
+          /* Black w/ opacity */
+        }
+
+        .info-display {
+          width: 50px;
+          margin-top: 30px;
+          margin-left: 30%;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+        }
+
+        .info-content {
+          background-color: #fefefe;
+          margin: 15% auto;
+          /* 15% from the top and centered */
+          padding: 20px;
+          border: 1px solid #888;
+          width: 25%;
+          /* Could be more or less, depending on screen size */
+        }
+
+        .close {
+          color: #aaa;
+          float: right;
+          font-size: 28px;
+          font-weight: bold;
+        }
+    
+        .close:hover,
+        .close:focus {
+          color: black;
+          text-decoration: none;
+          cursor: pointer;
+        }
+    
+        .info-entry {
+          width: 200px;
+          display: flex;
+          flex-direction: row;
+        }
+    
+        .info {
+          margin-left: 30px;
+        }
+      </style>
+      
+     <script type="text/javascript">
+      var staff_info = [];
+      google.script.run.withSuccessHandler(get_account).account();
+      google.script.run.withSuccessHandler(loadData).callData();
+      
+      var account = "";
+      function get_account(id){
+        account = id;
+      }
+      
+      function loadData(dataReturned) {
+        staff_info = dataReturned;
+        var tmp = "<ul id='myUL'>";
+        for (var i = 0; i < dataReturned.length; i++) {
+          if(dataReturned[i][0] != ""){
+            tmp = tmp + "<li><a onclick='trigger("+i+")'>" + dataReturned[i][0] + "<div style='color:red; font-style:italic; font-size:13px;'>: " + dataReturned[i][1] + "</div><div style='display: none;'>" + dataReturned[i][4] + "</div><div style='display: none;'>" + dataReturned[i][6] + "</div><div style='display: none;'>" + dataReturned[i][7] + "</div><div style='display: none;'>" + dataReturned[i][9] + "</div><div style='display: none;'>" + dataReturned[i][10] + "</div><div style='display: none;'>"+i+"</div></a></li>";
+          }
+        }
+        tmp = tmp + "</ul>";
+        document.getElementById("list").innerHTML = tmp;
+        
+        var validation = false;
+        var idx = 0;
+        for (var i = 0; i < dataReturned.length; i++) {
+          if(dataReturned[i][7] == account){
+            validation = true;
+           }
+        }
+            
+        if(validation == false){
+          lock();
+        }
+      }
+      
+      function lock(){
+        var obj = document.getElementById("bak");
+	    obj.style.visibility = "visible";
+      }
+      
+      function trigger(e){
+        console.log(e.toString());
+        var searched_item = e.toString();
+        var num = 0;
+        var temp_rowNum = "";
+        for(var i = 0; i < searched_item.length; i++){
+          if(searched_item[i] == '0'||searched_item[i] == '1'||searched_item[i] == '2'||searched_item[i] == '3'||searched_item[i] == '4'||searched_item[i] == '5'||searched_item[i] == '6'||searched_item[i] == '7'||searched_item[i] == '8'||searched_item[i] == '9'){
+            num = i;
+            break;
+          }
+        }
+        
+        for(var i = num; i < searched_item.length; i++){
+          temp_rowNum = temp_rowNum + searched_item[i];
+        }
+        var row = parseInt(temp_rowNum);
+        
+        var dialog = document.getElementById('detailed-info-modal');
+        var info_modal = document.getElementById("detailed-info");
+        
+        document.getElementById("name").innerHTML = staff_info[row][0];
+        document.getElementById("title").innerHTML = staff_info[row][1];
+        document.getElementById("gender").innerHTML = staff_info[row][5];
+        document.getElementById("contact-info").innerHTML = staff_info[row][6];
+        document.getElementById("email").innerHTML = staff_info[row][7];
+        document.getElementById("location").innerHTML = staff_info[row][4];
+        document.getElementById("team").innerHTML = staff_info[row][9];
+        document.getElementById("year").innerHTML = "(entered in) " + staff_info[row][10];
+        dialog.style.display = "block";
+        
+        document.getElementsByClassName("close")[0].onclick = function () {
+          dialog.style.display = "none";
+        } 
+      }
+      
+      function myFilter() {
+        var input, filter, ul, li, a, i, txtValue;
+        input = document.getElementById("myInput");
+        filter = input.value.toUpperCase();
+        ul = document.getElementById("myUL");
+        li = ul.getElementsByTagName("li");
+        for (i = 0; i < li.length; i++) {
+            a = li[i].getElementsByTagName("a")[0];
+            txtValue = a.textContent || a.innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                li[i].style.display = "";
+            } else {
+                li[i].style.display = "none";
+            }
+        }
+      }       
+    </script>
+    <ul class="topnav">
+      <li><?var url = getScriptUrl();?><a href='<?=url?>'>Home</a></li>
+      <li><?var url = getScriptUrl();?><a href='<?=url?>?v=chart_viewer'>Chart</a></li>
+      <li><?var url = getScriptUrl();?><a class="active" href='<?=url?>?v=list_viewer'>List</a></li>
+      <li><?var url = getScriptUrl();?><a href='<?=url?>?v=report'>Report</a></li>
+      <li><?var url = getScriptUrl();?><a href='<?=url?>?v=profile' style="position: absolute; right: 0px;">Profile</a></li>
+    </ul>
+    
+    <h2>Staff List</h2>
+    <input type="text" id="myInput" onkeyup="myFilter()" placeholder="Search" title="Type in a name">
+    <div id="detailed-info-modal" class="detailed-info" style='display: none;'>
+    <div class="info-content">
+      <span class="close">&times;</span>
+      <div class="info-display">
+        <div class="info-entry">
+          <i class="material-icons" style="position: relative; top: 12px;">person</i>
+          <p id="name" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <i class="material-icons" style="position: relative; top: 12px;">domain</i>
+          <p id="title" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <span class="material-icons" style="position: relative; top: 12px;">groups</span>
+          <p id="team" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <span class="material-icons" style="position: relative; top: 12px;">directions_run</span>
+          <p id="year" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <span class="material-icons" style="position: relative; top: 12px;">wc</span>
+          <p id="gender" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <span class="material-icons" style="position: relative; top: 12px;">phone</span>
+          <p id="contact-info" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <span class="material-icons" style="position: relative; top: 12px;">email</span>
+          <p id="email" class="info"></p>
+        </div>
+        <div class="info-entry">
+          <i class="material-icons" style="position: relative; top: 12px;">location_on</i>
+          <p id="location" class="info"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+    <div id="list"></div>
+    <div id="bak" style="width:200%;height:200%;top:0px;position:absolute; z-index:1;background:#1B1B1B;visibility:hidden;"></div>
+  </body>
+</html>
