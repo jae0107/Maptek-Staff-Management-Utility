@@ -34,7 +34,7 @@ As the company structure is apparently large, if users query for a certain perso
 
 <img src = "https://user-images.githubusercontent.com/79579314/131577258-039a1c97-6285-4a69-9570-788cda7c7b3d.png" width="400px">
 Figure 2.2.1 The search box
-<br>
+<br></br><br></br>
 The search function is capable of using different data fields as the keyword, e.g. name, phone number, email address, position etc. For example, the user wants to find the CEO, and then he/she searches by the keyword CEO, the result is shown in figure 2.2.2:
 
 <img src = "https://user-images.githubusercontent.com/79579314/131577366-4f39e80b-65c7-47a6-93a9-fb5d4a77a107.png" width="400px">
