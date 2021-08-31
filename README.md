@@ -24,16 +24,19 @@ Figure 1.2.1 Navigation bar for editors (Left: Home page, Right: Other pages)
 By selecting the "SEARCH IN THE CHART" option on the homepage of Maptek employees, they can see all the employees' information about Maptek, and display the connections between each employee in the form of a tree diagram. The display of the organization chart depends on the person in charge. The user can select the “person in charge” from the drop-down menu, and then the related sub-charts will be displayed. Different persons in charge will form different sub-charts.
 
 This chart also provides users with a selection of the profile view. If you click on the box of a certain individual, all the subordinate employee information can be collapsed, which would result in a brief view (Figure 2.1.1).
+
 <img src = "https://user-images.githubusercontent.com/79579314/131577141-3c7fc510-4666-4402-b403-3fea7601a32f.png" width="400px">
 Figure 2.1.1 Clicking on the information box to collapse
 
 ### 2.2 Search filter
 
-As the company structure is apparently large, if users query for a certain person, they have to look through the chart one by one. By applying a search filter, users could search for the information they want, then find the appropriate staff information. Refer to figure 2.2.1, the search box is at the top of the UI, under the main category row.  
+As the company structure is apparently large, if users query for a certain person, they have to look through the chart one by one. By applying a search filter, users could search for the information they want, then find the appropriate staff information. Refer to figure 2.2.1, the search box is at the top of the UI, under the main category row.
+
 <img src = "https://user-images.githubusercontent.com/79579314/131577258-039a1c97-6285-4a69-9570-788cda7c7b3d.png" width="400px">
 Figure 2.2.1 The search box
 
 The search function is capable of using different data fields as the keyword, e.g. name, phone number, email address, position etc. For example, the user wants to find the CEO, and then he/she searches by the keyword CEO, the result is shown in figure 2.2.2:
+
 <img src = "https://user-images.githubusercontent.com/79579314/131577366-4f39e80b-65c7-47a6-93a9-fb5d4a77a107.png" width="400px">
 Figure 2.2.2 Search filter
 
@@ -43,7 +46,8 @@ After performing the search, users can then click the “Profile” button to ge
 
 There are two ways to show up the staff details. One is to right click on the box of each person's information box (Figure 2.3.1), and the other one is to click the Profile button on the filtered result (Figure 2.3.2). We can search for the name of the person who wants to view the profile at the top left of the search interface, by first name, last name or full name, then the searched person and his corresponding department information will be displayed along with his name at the bottom of the search. Below its name, there is also the Profile button, as shown in Figure 2.3.2. When we click on it, a small interface will pop up and the relevant box on the chart will be highlighted (Figure 2.3.3).
 
-The information displayed here includes his name, gender, year of employment, contact information, address, department and email address. When we click anywhere outside of this small interface with the mouse, we will return to the current search interface and we can select other functions or keep searching.  
+The information displayed here includes his name, gender, year of employment, contact information, address, department and email address. When we click anywhere outside of this small interface with the mouse, we will return to the current search interface and we can select other functions or keep searching.
+
 <img src = "https://user-images.githubusercontent.com/79579314/131577479-185d57fa-9f3a-4f4b-9a3a-bde77527968c.png" width="400px">
 Figure 2.3.1 More information showed by right click
 
